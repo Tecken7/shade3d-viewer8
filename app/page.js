@@ -28,6 +28,7 @@ function ColorSwatch({ color, onChange, ariaLabel }) {
       <button
         aria-label={ariaLabel || 'color picker'}
         onClick={() => setOpen((v) => !v)}
+        className="swatch-btn"
         style={{
           width: 36, height: 22,
           borderRadius: 4,
@@ -222,7 +223,7 @@ export default function Page() {
   const [visible2, setVisible2] = useState(true)
   const [visible3, setVisible3] = useState(true)
 
-  const [lightIntensity, setLightIntensity] = useState(0.8)
+  const [lightIntensity, setLightIntensity] = useState(1)
   const [lightPos1, setLightPos1] = useState({ x: 0, y: 5, z: 5 })
   const [lightPos2, setLightPos2] = useState({ x: -10, y: 0, z: 0 })
   const [lightPos3, setLightPos3] = useState({ x: 10, y: 0, z: 0 })
@@ -272,7 +273,13 @@ export default function Page() {
             value={opacity1}
             onChange={(e) => setOpacity1(parseFloat(e.target.value))}
           />
-          <button className="toggle" onClick={() => setVisible1(!visible1)}>{visible1 ? '👁️' : '🚫'}</button>
+          <button className="toggle icon-btn" onClick={() => setVisible1(!visible1)}>
+            <img
+              src={visible1 ? '/icons/eye.png' : '/icons/eye-off.png'}
+              alt={visible1 ? 'Hide Upper' : 'Show Upper'}
+              className="icon-img"
+            />
+          </button>
         </div>
 
         {/* Lower row */}
@@ -288,7 +295,13 @@ export default function Page() {
             value={opacity2}
             onChange={(e) => setOpacity2(parseFloat(e.target.value))}
           />
-          <button className="toggle" onClick={() => setVisible2(!visible2)}>{visible2 ? '👁️' : '🚫'}</button>
+          <button className="toggle icon-btn" onClick={() => setVisible2(!visible2)}>
+            <img
+              src={visible2 ? '/icons/eye.png' : '/icons/eye-off.png'}
+              alt={visible2 ? 'Hide Lower' : 'Show Lower'}
+              className="icon-img"
+            />
+          </button>
         </div>
 
         {/* Waxup row */}
@@ -304,7 +317,13 @@ export default function Page() {
             value={opacity3}
             onChange={(e) => setOpacity3(parseFloat(e.target.value))}
           />
-          <button className="toggle" onClick={() => setVisible3(!visible3)}>{visible3 ? '👁️' : '🚫'}</button>
+        <button className="toggle icon-btn" onClick={() => setVisible3(!visible3)}>
+            <img
+              src={visible3 ? '/icons/eye.png' : '/icons/eye-off.png'}
+              alt={visible3 ? 'Hide Waxup' : 'Show Waxup'}
+              className="icon-img"
+            />
+          </button>
         </div>
 
         {/* Lights toggle */}
@@ -431,6 +450,20 @@ export default function Page() {
           color: white;
           cursor: pointer;
           font-size: 14px;
+        }
+        .icon-btn {
+          padding: 2px 6px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .icon-img {
+          width: 20px;
+          height: 20px;
+          display: block;
+          filter: drop-shadow(0 0 2px rgba(0,0,0,.5));
+          user-select: none;
+          pointer-events: none; /* klik jde na button, ne na img */
         }
         .controls-panel {
           backdrop-filter: blur(3px);

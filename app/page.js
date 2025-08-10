@@ -275,7 +275,7 @@ export default function Page() {
           />
           <button className="toggle icon-btn" onClick={() => setVisible1(!visible1)}>
             <img
-              src={visible1 ? '/icons/eye.png' : '/icons/eye-off.png'}
+              src={visible1 ? '/icons/Eye.png' : '/icons/Eye-off.png'}
               alt={visible1 ? 'Hide Upper' : 'Show Upper'}
               className="icon-img"
             />

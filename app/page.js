@@ -297,7 +297,7 @@ export default function Page() {
           />
           <button className="toggle icon-btn" onClick={() => setVisible2(!visible2)}>
             <img
-              src={visible2 ? '/icons/eye.png' : '/icons/eye-off.png'}
+              src={visible2 ? '/icons/Eye.png' : '/icons/Eye-off.png'}
               alt={visible2 ? 'Hide Lower' : 'Show Lower'}
               className="icon-img"
             />
@@ -319,7 +319,7 @@ export default function Page() {
           />
         <button className="toggle icon-btn" onClick={() => setVisible3(!visible3)}>
             <img
-              src={visible3 ? '/icons/eye.png' : '/icons/eye-off.png'}
+              src={visible3 ? '/icons/Eye.png' : '/icons/Eye-off.png'}
               alt={visible3 ? 'Hide Waxup' : 'Show Waxup'}
               className="icon-img"
             />

@@ -251,8 +251,14 @@ export default function Page() {
   const [lightPos4, setLightPos4] = useState({ x: 0, y: -5, z: -5 })
 
   const [showLights, setShowLights] = useState(false)
-
   const [loadedObjects, setLoadedObjects] = useState([])
+
+  /* Skryj panel, dokud se nehydratuje/domaluje první frame UI */
+  const [uiReady, setUiReady] = useState(false)
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setUiReady(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
 
   const [isMobile, setIsMobile] = useState(false)
   useEffect(() => {
@@ -282,6 +288,8 @@ export default function Page() {
           fontFamily: 'sans-serif',
           fontSize: '14px',
           ['--slider-width']: '180px',
+          opacity: uiReady ? 1 : 0,
+          transition: 'opacity .12s ease',
         }}
       >
         {/* Upper row */}
@@ -302,8 +310,9 @@ export default function Page() {
             onClick={() => setVisible1(!visible1)}
             aria-label={visible1 ? 'Hide Upper' : 'Show Upper'}
           >
-            <img src={ICONS.eye}    alt="" className="icon-img icon-on"  loading="eager" decoding="async" fetchPriority="high" />
-            <img src={ICONS.eyeOff} alt="" className="icon-img icon-off" loading="eager" decoding="async" fetchPriority="high" />
+            {/* fixní rozměry rovnou na elementu → žádný flash */}
+            <img src={ICONS.eye}    alt="" className="icon-img icon-on"  width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" fetchPriority="high" />
+            <img src={ICONS.eyeOff} alt="" className="icon-img icon-off" width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" fetchPriority="high" />
           </button>
         </div>
 
@@ -325,8 +334,8 @@ export default function Page() {
             onClick={() => setVisible2(!visible2)}
             aria-label={visible2 ? 'Hide Lower' : 'Show Lower'}
           >
-            <img src={ICONS.eye}    alt="" className="icon-img icon-on"  loading="eager" decoding="async" fetchPriority="high" />
-            <img src={ICONS.eyeOff} alt="" className="icon-img icon-off" loading="eager" decoding="async" fetchPriority="high" />
+            <img src={ICONS.eye}    alt="" className="icon-img icon-on"  width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" fetchPriority="high" />
+            <img src={ICONS.eyeOff} alt="" className="icon-img icon-off" width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" fetchPriority="high" />
           </button>
         </div>
 
@@ -348,8 +357,8 @@ export default function Page() {
             onClick={() => setVisible3(!visible3)}
             aria-label={visible3 ? 'Hide Waxup' : 'Show Waxup'}
           >
-            <img src={ICONS.eye}    alt="" className="icon-img icon-on"  loading="eager" decoding="async" fetchPriority="high" />
-            <img src={ICONS.eyeOff} alt="" className="icon-img icon-off" loading="eager" decoding="async" fetchPriority="high" />
+            <img src={ICONS.eye}    alt="" className="icon-img icon-on"  width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" fetchPriority="high" />
+            <img src={ICONS.eyeOff} alt="" className="icon-img icon-off" width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" fetchPriority="high" />
           </button>
         </div>
 
@@ -360,8 +369,8 @@ export default function Page() {
           aria-label="Toggle lights panel"
           style={{ marginTop: '10px' }}
         >
-          <img src={ICONS.arrowRight} alt="" className="icon-arrow-img icon-right" loading="eager" decoding="async" />
-          <img src={ICONS.arrowDown}  alt="" className="icon-arrow-img icon-down"  loading="eager" decoding="async" />
+          <img src={ICONS.arrowRight} alt="" className="icon-arrow-img icon-right" width="16" height="16" style={{width:16,height:16}} loading="eager" decoding="async" />
+          <img src={ICONS.arrowDown}  alt="" className="icon-arrow-img icon-down"  width="16" height="16" style={{width:16,height:16}} loading="eager" decoding="async" />
           <span className="arrow-label">Světla</span>
         </button>
 
@@ -369,7 +378,7 @@ export default function Page() {
           <div style={{ marginTop: '8px' }}>
             {/* Light intensity s ikonou žárovky */}
             <div className="lights-row">
-              <img src={ICONS.bulb} alt="" className="icon-inline" />
+              <img src={ICONS.bulb} alt="" className="icon-inline" width="16" height="16" style={{width:16,height:16}} loading="eager" decoding="async" />
               <span>Light Intensity</span>
             </div>
             <div className="axis-row">
@@ -394,7 +403,7 @@ export default function Page() {
             ].map((light, idx) => (
               <div key={idx} style={{ marginTop: '10px' }}>
                 <div className="lights-row">
-                  <img src={ICONS.flashlight} alt="" className="icon-inline" />
+                  <img src={ICONS.flashlight} alt="" className="icon-inline" width="16" height="16" style={{width:16,height:16}} loading="eager" decoding="async" />
                   <span>{light.label}</span>
                 </div>
                 {['x','y','z'].map((axis) => (
@@ -533,6 +542,7 @@ export default function Page() {
           background: transparent;
           color: white;
           cursor: pointer;
+          overflow: hidden;
         }
         .icon-arrow-img {
           width: 16px;
@@ -546,7 +556,7 @@ export default function Page() {
           pointer-events: none;
         }
         .icon-arrow .arrow-label {
-          padding-left: 22px; /* místo pro ikonu vlevo */
+          padding-left: 22px;
         }
         .icon-arrow.is-closed .icon-right { opacity: 1; transform: translateX(0); }
         .icon-arrow.is-open   .icon-down  { opacity: 1; transform: translateY(0); }

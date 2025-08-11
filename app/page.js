@@ -8,7 +8,7 @@ import { Suspense, useEffect, useRef, useState } from 'react'
 import { Html, useProgress } from '@react-three/drei'
 import { HexColorPicker, HexColorInput } from 'react-colorful'
 
-/* ---------- Cesty k ikonám + preload ---------- */
+/* ---------- Ikony + preload ---------- */
 const ICONS = {
   eye: '/icons/Eye.png',
   eyeOff: '/icons/Eye-off.png',
@@ -30,26 +30,24 @@ function PreloadIcons() {
   return null
 }
 
-/* ---------- Jednotný color picker (popover) ---------- */
+/* ---------- Jednotný color picker ---------- */
 function ColorSwatch({ color, onChange, ariaLabel }) {
   const [open, setOpen] = useState(false)
-  const containerRef = useRef(null)
+  const ref = useRef(null)
 
   useEffect(() => {
     const onDocClick = (e) => {
-      if (open && containerRef.current && !containerRef.current.contains(e.target)) {
-        setOpen(false)
-      }
+      if (open && ref.current && !ref.current.contains(e.target)) setOpen(false)
     }
     document.addEventListener('mousedown', onDocClick)
     return () => document.removeEventListener('mousedown', onDocClick)
   }, [open])
 
   return (
-    <div ref={containerRef} style={{ position: 'relative', display: 'inline-block' }}>
+    <div ref={ref} style={{ position: 'relative', display: 'inline-block' }}>
       <button
         aria-label={ariaLabel || 'color picker'}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen(v => !v)}
         className="swatch-btn"
         style={{
           width: 36, height: 22,
@@ -61,36 +59,20 @@ function ColorSwatch({ color, onChange, ariaLabel }) {
         }}
       />
       {open && (
-        <div
-          style={{
-            position: 'absolute',
-            zIndex: 20,
-            top: 28,
-            left: 0,
-            background: 'rgba(0,0,0,.92)',
-            padding: 12,
-            borderRadius: 10,
-            border: '1px solid rgba(255,255,255,.18)',
-            backdropFilter: 'blur(4px)',
-            boxShadow: '0 6px 24px rgba(0,0,0,.35)',
-          }}
-        >
+        <div style={{
+          position: 'absolute', zIndex: 20, top: 28, left: 0,
+          background: 'rgba(0,0,0,.92)', padding: 12, borderRadius: 10,
+          border: '1px solid rgba(255,255,255,.18)', backdropFilter: 'blur(4px)',
+          boxShadow: '0 6px 24px rgba(0,0,0,.35)',
+        }}>
           <HexColorPicker color={color} onChange={onChange} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
             <span style={{ color: '#fff', fontSize: 12 }}>#</span>
             <HexColorInput
-              color={color}
-              onChange={onChange}
-              prefixed={false}
+              color={color} onChange={onChange} prefixed={false}
               style={{
-                width: 90,
-                padding: '4px 6px',
-                borderRadius: 6,
-                border: '1px solid #444',
-                background: '#111',
-                color: '#fff',
-                fontFamily: 'monospace',
-                fontSize: 12,
+                width: 90, padding: '4px 6px', borderRadius: 6, border: '1px solid #444',
+                background: '#111', color: '#fff', fontFamily: 'monospace', fontSize: 12,
               }}
             />
           </div>
@@ -104,9 +86,7 @@ function ColorSwatch({ color, onChange, ariaLabel }) {
 function Model({ url, color, opacity, visible, onLoaded }) {
   const obj = useLoader(OBJLoader, url)
 
-  useEffect(() => {
-    if (obj && onLoaded) onLoaded(obj)
-  }, [obj, onLoaded])
+  useEffect(() => { if (obj && onLoaded) onLoaded(obj) }, [obj, onLoaded])
 
   const material = new THREE.MeshStandardMaterial({
     color: new THREE.Color(color),
@@ -118,14 +98,12 @@ function Model({ url, color, opacity, visible, onLoaded }) {
     depthWrite: opacity === 1,
   })
 
-  obj.traverse((child) => {
-    if (child.isMesh) child.material = material
-  })
+  obj.traverse((child) => { if (child.isMesh) child.material = material })
 
   return visible ? <primitive object={obj} /> : null
 }
 
-/* ---------- Ovládání kamery (vystavíme controls) ---------- */
+/* ---------- TrackballControls (vystavíme controls) ---------- */
 function TouchTrackballControls({ onReady }) {
   const { camera, gl } = useThree()
   const controlsRef = useRef(null)
@@ -139,21 +117,14 @@ function TouchTrackballControls({ onReady }) {
     controlsRef.current = controls
     onReady?.(controls)
 
-    const handleTouchStart = (event) => {
-      event.preventDefault()
-      controls.handleTouchStart(event)
-    }
-    const handleTouchMove = (event) => {
-      event.preventDefault()
-      controls.handleTouchMove(event)
-    }
-
+    const handleTouchStart = (e) => { e.preventDefault(); controls.handleTouchStart(e) }
+    const handleTouchMove  = (e) => { e.preventDefault(); controls.handleTouchMove(e) }
     gl.domElement.addEventListener('touchstart', handleTouchStart, { passive: false })
-    gl.domElement.addEventListener('touchmove', handleTouchMove, { passive: false })
+    gl.domElement.addEventListener('touchmove',  handleTouchMove,  { passive: false })
 
     return () => {
       gl.domElement.removeEventListener('touchstart', handleTouchStart)
-      gl.domElement.removeEventListener('touchmove', handleTouchMove)
+      gl.domElement.removeEventListener('touchmove',  handleTouchMove)
       controls.dispose()
     }
   }, [camera, gl, onReady])
@@ -173,30 +144,24 @@ function Loader() {
   const { progress } = useProgress()
   return (
     <Html center>
-      <div
-        style={{
-          background: 'rgba(0,0,0,0.7)',
-          padding: '20px 40px',
-          borderRadius: '10px',
-          color: 'white',
-          fontFamily: 'sans-serif',
-          fontSize: '18px',
-        }}
-      >
+      <div style={{
+        background: 'rgba(0,0,0,0.7)', padding: '20px 40px', borderRadius: '10px',
+        color: 'white', fontFamily: 'sans-serif', fontSize: '18px',
+      }}>
         ⏳ Načítání modelů: {Math.round(progress)} %
       </div>
     </Html>
   )
 }
 
-/* ---------- Bridge: vezme kameru z Canvasu a předá ji nahoru ---------- */
+/* ---------- Kamera do parentu ---------- */
 function CameraBridge({ onReady }) {
   const { camera } = useThree()
   useEffect(() => { onReady?.(camera) }, [camera, onReady])
   return null
 }
 
-/* ---------- Auto-fit kamery (nastaví i controls.target + uloží saveState) ---------- */
+/* ---------- Auto-fit + nastavení reset stavu pro TrackballControls ---------- */
 function FitCameraOnLoad({
   objects,
   expectedCount = 3,
@@ -204,8 +169,7 @@ function FitCameraOnLoad({
   isMobile = false,
   desktopScale = 0.40,
   mobileScale = 1.0,
-  controls,     // <- NOVÉ
-  onFitted,     // callback se stavem po fitu
+  controls, // TrackballControls
 }) {
   const { camera, size } = useThree()
   const fitted = useRef(false)
@@ -223,34 +187,32 @@ function FitCameraOnLoad({
     box.getCenter(center)
     box.getSize(dims)
 
-    // zarovnej kameru na střed BB
+    // pozice kamery nad středem
     camera.position.set(center.x, center.y, camera.position.z)
 
     const objW = Math.max(dims.x, 1e-6)
     const objH = Math.max(dims.y, 1e-6)
     const zoomX = size.width / (objW * margin)
     const zoomY = size.height / (objH * margin)
-    let newZoom = Math.min(zoomX, zoomY)
-    newZoom *= isMobile ? mobileScale : desktopScale
+    let newZoom = Math.min(zoomX, zoomY) * (isMobile ? mobileScale : desktopScale)
 
     camera.zoom = Math.max(newZoom, 0.01)
     camera.updateProjectionMatrix()
 
-    // DŮLEŽITÉ: cílit controls na střed a uložit stav
+    // TrackballControls: nastavíme target a zároveň *výchozí* stavy pro reset()
     if (controls) {
       controls.target.copy(center)
       controls.update()
-      controls.saveState() // uloží position/target/up/zoom pro reset()
+
+      // uložíme jako výchozí hodnoty pro reset()
+      if (controls.target0) controls.target0.copy(center)
+      if (controls.position0) controls.position0.copy(camera.position)
+      if (controls.up0) controls.up0.copy(camera.up)
+      if ('zoom0' in controls) controls.zoom0 = camera.zoom
     }
 
     fitted.current = true
-    onFitted?.({
-      position: camera.position.clone(),
-      zoom: camera.zoom,
-      target: center.clone(),
-      up: camera.up.clone(),
-    })
-  }, [objects, expectedCount, margin, isMobile, desktopScale, mobileScale, camera, size.width, size.height, controls, onFitted])
+  }, [objects, expectedCount, margin, isMobile, desktopScale, mobileScale, camera, size.width, size.height, controls])
 
   return null
 }
@@ -278,18 +240,15 @@ export default function Page() {
   const [showLights, setShowLights] = useState(false)
   const [loadedObjects, setLoadedObjects] = useState([])
 
-  // odkazy na camera & controls
   const cameraRef = useRef(null)
   const controlsRef = useRef(null)
 
-  // UI ready
   const [uiReady, setUiReady] = useState(false)
   useEffect(() => {
     const id = requestAnimationFrame(() => setUiReady(true))
     return () => cancelAnimationFrame(id)
   }, [])
 
-  // mobil/desktop
   const [isMobile, setIsMobile] = useState(false)
   useEffect(() => {
     const uaMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
@@ -302,11 +261,11 @@ export default function Page() {
     setLoadedObjects((prev) => (prev.includes(obj) ? prev : [...prev, obj]))
   }
 
-  // Reset přes controls.reset() (vrátí i target/up)
   const resetCamera = () => {
-    if (controlsRef.current) {
-      controlsRef.current.reset()
-      controlsRef.current.update()
+    const controls = controlsRef.current
+    if (controls) {
+      controls.reset()   // vrátí se position/target/up/zoom na *_0 hodnoty
+      controls.update()
     }
   }
 
@@ -318,96 +277,61 @@ export default function Page() {
         className="controls-panel"
         style={{
           position: 'absolute',
-          top: 10,
-          left: 10,
-          zIndex: 1,
-          color: 'white',
-          fontFamily: 'sans-serif',
-          fontSize: '14px',
+          top: 10, left: 10, zIndex: 1,
+          color: 'white', fontFamily: 'sans-serif', fontSize: '14px',
           ['--slider-width']: '180px',
-          opacity: uiReady ? 1 : 0,
-          transition: 'opacity .12s ease',
+          opacity: uiReady ? 1 : 0, transition: 'opacity .12s ease',
         }}
       >
-        {/* Upper row */}
+        {/* Upper */}
         <div className="control-row">
           <div className="row-label">Upper:</div>
           <ColorSwatch color={color1} onChange={setColor1} ariaLabel="Upper color" />
-          <input
-            className="slider"
-            type="range"
-            min={0}
-            max={1}
-            step={0.01}
-            value={opacity1}
-            onChange={(e) => setOpacity1(parseFloat(e.target.value))}
-          />
-          <button
-            className={`toggle icon-btn ${visible1 ? 'is-on' : 'is-off'}`}
-            onClick={() => setVisible1(!visible1)}
-            aria-label={visible1 ? 'Hide Upper' : 'Show Upper'}
-          >
-            <img src={ICONS.eye}    alt="" className="icon-img icon-on"  width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" fetchPriority="high" />
-            <img src={ICONS.eyeOff} alt="" className="icon-img icon-off" width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" fetchPriority="high" />
+          <input className="slider" type="range" min={0} max={1} step={0.01} value={opacity1}
+                 onChange={(e) => setOpacity1(parseFloat(e.target.value))} />
+          <button className={`toggle icon-btn ${visible1 ? 'is-on' : 'is-off'}`}
+                  onClick={() => setVisible1(!visible1)}
+                  aria-label={visible1 ? 'Hide Upper' : 'Show Upper'}>
+            <img src={ICONS.eye} alt="" className="icon-img icon-on"  width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" />
+            <img src={ICONS.eyeOff} alt="" className="icon-img icon-off" width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" />
           </button>
         </div>
 
-        {/* Lower row */}
+        {/* Lower */}
         <div className="control-row">
           <div className="row-label">Lower:</div>
           <ColorSwatch color={color2} onChange={setColor2} ariaLabel="Lower color" />
-          <input
-            className="slider"
-            type="range"
-            min={0}
-            max={1}
-            step={0.01}
-            value={opacity2}
-            onChange={(e) => setOpacity2(parseFloat(e.target.value))}
-          />
-          <button
-            className={`toggle icon-btn ${visible2 ? 'is-on' : 'is-off'}`}
-            onClick={() => setVisible2(!visible2)}
-            aria-label={visible2 ? 'Hide Lower' : 'Show Lower'}
-          >
-            <img src={ICONS.eye}    alt="" className="icon-img icon-on"  width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" fetchPriority="high" />
-            <img src={ICONS.eyeOff} alt="" className="icon-img icon-off" width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" fetchPriority="high" />
+          <input className="slider" type="range" min={0} max={1} step={0.01} value={opacity2}
+                 onChange={(e) => setOpacity2(parseFloat(e.target.value))} />
+          <button className={`toggle icon-btn ${visible2 ? 'is-on' : 'is-off'}`}
+                  onClick={() => setVisible2(!visible2)}
+                  aria-label={visible2 ? 'Hide Lower' : 'Show Lower'}>
+            <img src={ICONS.eye} alt="" className="icon-img icon-on"  width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" />
+            <img src={ICONS.eyeOff} alt="" className="icon-img icon-off" width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" />
           </button>
         </div>
 
-        {/* Waxup row */}
+        {/* Waxup */}
         <div className="control-row">
           <div className="row-label">Waxup:</div>
           <ColorSwatch color={color3} onChange={setColor3} ariaLabel="Waxup color" />
-          <input
-            className="slider"
-            type="range"
-            min={0}
-            max={1}
-            step={0.01}
-            value={opacity3}
-            onChange={(e) => setOpacity3(parseFloat(e.target.value))}
-          />
-          <button
-            className={`toggle icon-btn ${visible3 ? 'is-on' : 'is-off'}`}
-            onClick={() => setVisible3(!visible3)}
-            aria-label={visible3 ? 'Hide Waxup' : 'Show Waxup'}
-          >
-            <img src={ICONS.eye}    alt="" className="icon-img icon-on"  width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" fetchPriority="high" />
-            <img src={ICONS.eyeOff} alt="" className="icon-img icon-off" width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" fetchPriority="high" />
+          <input className="slider" type="range" min={0} max={1} step={0.01} value={opacity3}
+                 onChange={(e) => setOpacity3(parseFloat(e.target.value))} />
+          <button className={`toggle icon-btn ${visible3 ? 'is-on' : 'is-off'}`}
+                  onClick={() => setVisible3(!visible3)}
+                  aria-label={visible3 ? 'Hide Waxup' : 'Show Waxup'}>
+            <img src={ICONS.eye} alt="" className="icon-img icon-on"  width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" />
+            <img src={ICONS.eyeOff} alt="" className="icon-img icon-off" width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" />
           </button>
         </div>
 
-        {/* Řádek: Světla + Reset */}
+        {/* Světla + Reset */}
         <div className="buttons-row">
-          <button
-            className={`toggle arrow-toggle ${showLights ? 'is-open' : 'is-closed'}`}
-            onClick={() => setShowLights(!showLights)}
-            aria-label="Toggle lights panel"
-          >
+          <button className={`toggle arrow-toggle ${showLights ? 'is-open' : 'is-closed'}`}
+                  onClick={() => setShowLights(!showLights)} aria-label="Toggle lights panel">
             <span className="arrow-stack" aria-hidden>
-              <img src={ICONS.arrowClosed} className="arrow-img arrow-closed" width="16" height="16" style={{width:16,height:16}} loading="eager" decoding="async" alt="" />
-              <img src={ICONS.arrowOpen}   className="arrow-img arrow-open"   width="16" height="16" style={{width:16,height:16}} loading="eager" decoding="async" alt="" />
+              <img src={ICONS.arrowClosed} className="arrow-img arrow-closed" width="16" height="16" style={{width:16,height:16}} loading="eager" decoding="async" alt=""/>
+              <img src={ICONS.arrowOpen}   className="arrow-img arrow-open"   width="16" height="16" style={{width:16,height:16}} loading="eager" decoding="async" alt=""/>
             </span>
             <span className="arrow-label">Světla</span>
           </button>
@@ -420,25 +344,17 @@ export default function Page() {
 
         {showLights && (
           <div style={{ marginTop: '8px' }}>
-            {/* Light intensity */}
             <div className="lights-row">
               <img src={ICONS.bulb} alt="" className="icon-inline" width="16" height="16" style={{width:16,height:16}} loading="eager" decoding="async" />
               <span>Light Intensity</span>
             </div>
             <div className="axis-row">
               <span className="axis-label" aria-hidden="true">&nbsp;</span>
-              <input
-                className="slider"
-                type="range"
-                min={0}
-                max={2}
-                step={0.01}
-                value={lightIntensity}
-                onChange={(e) => setLightIntensity(parseFloat(e.target.value))}
-              />
+              <input className="slider" type="range" min={0} max={2} step={0.01}
+                     value={lightIntensity}
+                     onChange={(e) => setLightIntensity(parseFloat(e.target.value))} />
             </div>
 
-            {/* Pozice světel */}
             {[
               { label: 'Light 1 Position', pos: lightPos1, setPos: setLightPos1 },
               { label: 'Light 2 Position', pos: lightPos2, setPos: setLightPos2 },
@@ -453,15 +369,9 @@ export default function Page() {
                 {['x','y','z'].map((axis) => (
                   <div className="axis-row" key={axis}>
                     <span className="axis-label">{axis.toUpperCase()}:</span>
-                    <input
-                      className="slider"
-                      type="range"
-                      min={-10}
-                      max={10}
-                      step={0.1}
-                      value={light.pos[axis]}
-                      onChange={(e) => light.setPos({ ...light.pos, [axis]: parseFloat(e.target.value) })}
-                    />
+                    <input className="slider" type="range" min={-10} max={10} step={0.1}
+                           value={light.pos[axis]}
+                           onChange={(e) => light.setPos({ ...light.pos, [axis]: parseFloat(e.target.value) })}/>
                   </div>
                 ))}
               </div>
@@ -490,8 +400,7 @@ export default function Page() {
           isMobile={isMobile}
           desktopScale={0.40}
           mobileScale={1.0}
-          controls={controlsRef.current}               // <- posíláme controls
-          onFitted={() => { /* nic dalšího netřeba, saveState se dělá uvnitř */ }}
+          controls={controlsRef.current}   /* ← tady */
         />
 
         <TouchTrackballControls onReady={(c) => (controlsRef.current = c)} />
@@ -501,192 +410,43 @@ export default function Page() {
       {/* Styly UI */}
       <style jsx global>{`
         .slider {
-          -webkit-appearance: none;
-          -moz-appearance: none;
-          appearance: none;
-          width: var(--slider-width, 140px);
-          height: 14px;
-          background: transparent;
-          margin: 5px 0;
-          display: inline-block;
+          -webkit-appearance: none; -moz-appearance: none; appearance: none;
+          width: var(--slider-width, 140px); height: 14px; background: transparent;
+          margin: 5px 0; display: inline-block;
         }
-        .slider::-webkit-slider-runnable-track {
-          height: 4px;
-          background: white;
-          border-radius: 2px;
-        }
+        .slider::-webkit-slider-runnable-track { height: 4px; background: white; border-radius: 2px; }
         .slider::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 14px;
-          height: 14px;
-          border-radius: 50%;
-          background: white;
-          cursor: pointer;
-          box-shadow: 0 0 2px black;
-          margin-top: -5px;
+          -webkit-appearance: none; appearance: none; width: 14px; height: 14px;
+          border-radius: 50%; background: white; cursor: pointer; box-shadow: 0 0 2px black; margin-top: -5px;
         }
-        .slider::-moz-range-track {
-          height: 4px;
-          background: white;
-          border-radius: 2px;
-        }
+        .slider::-moz-range-track { height: 4px; background: white; border-radius: 2px; }
         .slider::-moz-range-thumb {
-          width: 14px;
-          height: 14px;
-          border-radius: 50%;
-          background: white;
-          cursor: pointer;
-          box-shadow: 0 0 2px black;
-          border: none;
+          width: 14px; height: 14px; border-radius: 50%; background: white;
+          cursor: pointer; box-shadow: 0 0 2px black; border: none;
         }
 
-        .toggle {
-          background: transparent;
-          border: 1px solid white;
-          border-radius: 6px;
-          padding: 6px 10px;
-          color: white;
-          cursor: pointer;
-          font-size: 14px;
-        }
+        .toggle { background: transparent; border: 1px solid white; border-radius: 6px; padding: 6px 10px; color: white; cursor: pointer; font-size: 14px; }
+        .icon-btn { position: relative; width: 28px; height: 24px; padding: 0; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; margin-left: 4px; }
+        .icon-img { position: absolute; inset: 0; width: 20px; height: 20px; margin: auto; display: block; filter: drop-shadow(0 0 2px rgba(0,0,0,.5)); user-select: none; pointer-events: none; opacity: 0; transition: opacity .06s linear; }
+        .icon-btn.is-on .icon-on { opacity: 1; } .icon-btn.is-off .icon-off { opacity: 1; }
 
-        .icon-btn {
-          position: relative;
-          width: 28px;
-          height: 24px;
-          padding: 0;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          overflow: hidden;
-          margin-left: 4px;
-        }
-        .icon-img {
-          position: absolute;
-          inset: 0;
-          width: 20px;
-          height: 20px;
-          margin: auto;
-          display: block;
-          filter: drop-shadow(0 0 2px rgba(0,0,0,.5));
-          user-select: none;
-          pointer-events: none;
-          opacity: 0;
-          transition: opacity .06s linear;
-        }
-        .icon-btn.is-on  .icon-on  { opacity: 1; }
-        .icon-btn.is-off .icon-off { opacity: 1; }
-
-        .buttons-row {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          margin-top: 10px;
-        }
-
-        /* Arrow toggle */
-        .arrow-toggle {
-          position: relative;
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 6px 10px;
-          border: 1px solid white;
-          border-radius: 6px;
-          background: transparent;
-          color: white;
-          cursor: pointer;
-          overflow: hidden;
-        }
-        .arrow-stack {
-          position: relative;
-          width: 16px;
-          height: 16px;
-          display: inline-block;
-        }
-        .arrow-img {
-          position: absolute;
-          left: 0; top: 0;
-          width: 16px;
-          height: 16px;
-          opacity: 0;
-          transform: rotate(-90deg) scale(0.85);
-          transition: opacity .16s ease, transform .22s cubic-bezier(.2,.7,.2,1);
-          filter: drop-shadow(0 0 1px rgba(0,0,0,.4));
-          pointer-events: none;
-        }
-        .arrow-toggle.is-closed .arrow-closed {
-          opacity: 1;
-          transform: rotate(0deg) scale(1);
-        }
-        .arrow-toggle.is-open .arrow-open {
-          opacity: 1;
-          transform: rotate(0deg) scale(1);
-        }
+        .buttons-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+        .arrow-toggle { position: relative; display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid white; border-radius: 6px; background: transparent; color: white; cursor: pointer; overflow: hidden; }
+        .arrow-stack { position: relative; width: 16px; height: 16px; display: inline-block; }
+        .arrow-img { position: absolute; left: 0; top: 0; width: 16px; height: 16px; opacity: 0; transform: rotate(-90deg) scale(0.85); transition: opacity .16s ease, transform .22s cubic-bezier(.2,.7,.2,1); filter: drop-shadow(0 0 1px rgba(0,0,0,.4)); pointer-events: none; }
+        .arrow-toggle.is-closed .arrow-closed { opacity: 1; transform: rotate(0deg) scale(1); }
+        .arrow-toggle.is-open .arrow-open   { opacity: 1; transform: rotate(0deg) scale(1); }
         .arrow-label { padding-left: 2px; }
+        .reset-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; }
 
-        /* Reset button */
-        .reset-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 10px;
-        }
-        .reset-btn:disabled {
-          opacity: .5;
-          cursor: default;
-        }
-
-        .controls-panel {
-          backdrop-filter: blur(3px);
-          background: rgba(0,0,0,.25);
-          border: 1px solid rgba(255,255,255,.15);
-          border-radius: 8px;
-          padding: 10px 12px;
-          --slider-width: 180px;
-          width: max-content;
-        }
-        .control-row {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          margin: 6px 0;
-        }
-        .row-label {
-          width: 60px;
-        }
-        .axis-row {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          margin: 4px 0;
-        }
-        .axis-label {
-          width: 18px;
-          text-align: right;
-          color: #fff;
-          opacity: .9;
-        }
-        .axis-row .slider {
-          flex: 0 0 var(--slider-width, 140px);
-          width: var(--slider-width, 140px);
-        }
-
-        .lights-row {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          margin-bottom: 4px;
-        }
-        .icon-inline {
-          width: 16px;
-          height: 16px;
-          display: inline-block;
-          filter: drop-shadow(0 0 1px rgba(0,0,0,.5));
-          user-select: none;
-          pointer-events: none;
-        }
+        .controls-panel { backdrop-filter: blur(3px); background: rgba(0,0,0,.25); border: 1px solid rgba(255,255,255,.15); border-radius: 8px; padding: 10px 12px; --slider-width: 180px; width: max-content; }
+        .control-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+        .row-label { width: 60px; }
+        .axis-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+        .axis-label { width: 18px; text-align: right; color: #fff; opacity: .9; }
+        .axis-row .slider { flex: 0 0 var(--slider-width, 140px); width: var(--slider-width, 140px); }
+        .lights-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .icon-inline { width: 16px; height: 16px; display: inline-block; filter: drop-shadow(0 0 1px rgba(0,0,0,.5)); user-select: none; pointer-events: none; }
       `}</style>
     </div>
   )

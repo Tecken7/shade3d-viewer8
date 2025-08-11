@@ -12,11 +12,15 @@ import { HexColorPicker, HexColorInput } from 'react-colorful'
 const ICONS = {
   eye: '/icons/Eye.png',
   eyeOff: '/icons/Eye-off.png',
+  arrowRight: '/icons/ArrowRight.png',
+  arrowDown: '/icons/ArrowDown.png',
+  bulb: '/icons/Bulb.png',
+  flashlight: '/icons/Flashlight.png',
 }
 
 function PreloadIcons() {
   useEffect(() => {
-    ;[ICONS.eye, ICONS.eyeOff].forEach((src) => {
+    Object.values(ICONS).forEach((src) => {
       const img = new Image()
       img.decoding = 'async'
       img.src = src
@@ -264,7 +268,7 @@ export default function Page() {
 
   return (
     <div style={{ width: '100vw', height: '100vh' }}>
-      {/* přednačtení ikon */}
+      {/* přednačtení všech ikon */}
       <PreloadIcons />
 
       <div
@@ -349,14 +353,25 @@ export default function Page() {
           </button>
         </div>
 
-        {/* Lights toggle */}
-        <div style={{ marginTop: '10px', cursor: 'pointer' }} onClick={() => setShowLights(!showLights)}>
-          {showLights ? '⬇️ Světla' : '➡️ Světla'}
-        </div>
+        {/* Lights toggle button (šipky) */}
+        <button
+          className={`toggle icon-arrow ${showLights ? 'is-open' : 'is-closed'}`}
+          onClick={() => setShowLights(!showLights)}
+          aria-label="Toggle lights panel"
+          style={{ marginTop: '10px' }}
+        >
+          <img src={ICONS.arrowRight} alt="" className="icon-arrow-img icon-right" loading="eager" decoding="async" />
+          <img src={ICONS.arrowDown}  alt="" className="icon-arrow-img icon-down"  loading="eager" decoding="async" />
+          <span className="arrow-label">Světla</span>
+        </button>
 
         {showLights && (
           <div style={{ marginTop: '8px' }}>
-            <div style={{ marginBottom: '6px' }}>💡 Light Intensity:</div>
+            {/* Light intensity s ikonou žárovky */}
+            <div className="lights-row">
+              <img src={ICONS.bulb} alt="" className="icon-inline" />
+              <span>Light Intensity</span>
+            </div>
             <div className="axis-row">
               <span className="axis-label" aria-hidden="true">&nbsp;</span>
               <input
@@ -370,6 +385,7 @@ export default function Page() {
               />
             </div>
 
+            {/* Pozice světel s ikonou baterky */}
             {[
               { label: 'Light 1 Position', pos: lightPos1, setPos: setLightPos1 },
               { label: 'Light 2 Position', pos: lightPos2, setPos: setLightPos2 },
@@ -377,7 +393,10 @@ export default function Page() {
               { label: 'Light 4 Position', pos: lightPos4, setPos: setLightPos4 },
             ].map((light, idx) => (
               <div key={idx} style={{ marginTop: '10px' }}>
-                <div>🔦 {light.label}:</div>
+                <div className="lights-row">
+                  <img src={ICONS.flashlight} alt="" className="icon-inline" />
+                  <span>{light.label}</span>
+                </div>
                 {['x','y','z'].map((axis) => (
                   <div className="axis-row" key={axis}>
                     <span className="axis-label">{axis.toUpperCase()}:</span>
@@ -465,6 +484,7 @@ export default function Page() {
           box-shadow: 0 0 2px black;
           border: none;
         }
+
         .toggle {
           background: transparent;
           border: 1px solid white;
@@ -474,6 +494,7 @@ export default function Page() {
           cursor: pointer;
           font-size: 14px;
         }
+
         .icon-btn {
           position: relative;
           width: 28px;
@@ -483,6 +504,7 @@ export default function Page() {
           align-items: center;
           justify-content: center;
           overflow: hidden;
+          margin-left: 4px;
         }
         .icon-img {
           position: absolute;
@@ -499,6 +521,35 @@ export default function Page() {
         }
         .icon-btn.is-on  .icon-on  { opacity: 1; }
         .icon-btn.is-off .icon-off { opacity: 1; }
+
+        .icon-arrow {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 6px 10px;
+          border: 1px solid white;
+          border-radius: 6px;
+          background: transparent;
+          color: white;
+          cursor: pointer;
+        }
+        .icon-arrow-img {
+          width: 16px;
+          height: 16px;
+          position: absolute;
+          left: 8px;
+          top: 0; bottom: 0; margin: auto 0;
+          opacity: 0;
+          transition: opacity .08s linear, transform .12s ease;
+          filter: drop-shadow(0 0 1px rgba(0,0,0,.5));
+          pointer-events: none;
+        }
+        .icon-arrow .arrow-label {
+          padding-left: 22px; /* místo pro ikonu vlevo */
+        }
+        .icon-arrow.is-closed .icon-right { opacity: 1; transform: translateX(0); }
+        .icon-arrow.is-open   .icon-down  { opacity: 1; transform: translateY(0); }
 
         .controls-panel {
           backdrop-filter: blur(3px);
@@ -533,6 +584,21 @@ export default function Page() {
         .axis-row .slider {
           flex: 0 0 var(--slider-width, 140px);
           width: var(--slider-width, 140px);
+        }
+
+        .lights-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 4px;
+        }
+        .icon-inline {
+          width: 16px;
+          height: 16px;
+          display: inline-block;
+          filter: drop-shadow(0 0 1px rgba(0,0,0,.5));
+          user-select: none;
+          pointer-events: none;
         }
       `}</style>
     </div>

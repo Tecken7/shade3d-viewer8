@@ -17,7 +17,7 @@ const ICONS = {
   flashlight: '/icons/Flashlight.png',
 }
 
-/* ---------- Přednačtení PNG ikon (SVG šipky načítáme jako text níže) ---------- */
+/* ---------- Přednačtení PNG ikon ---------- */
 function PreloadIcons() {
   useEffect(() => {
     Object.values(ICONS).forEach((src) => {
@@ -231,44 +231,56 @@ function FitCameraOnLoad({
 }
 
 /* ---------- SVG morph tlačítko (Arrow-closed.svg ↔ Arrow-open.svg) ---------- */
-async function fetchPathD(url) {
+async function fetchSvgData(url) {
   const txt = await fetch(url).then((r) => r.text())
   const doc = new DOMParser().parseFromString(txt, 'image/svg+xml')
-  const p = doc.querySelector('path')
-  return p ? p.getAttribute('d') : null
+  const svgEl = doc.querySelector('svg')
+  const pathEl = doc.querySelector('path')
+  return {
+    d: pathEl ? pathEl.getAttribute('d') : null,
+    viewBox: svgEl ? svgEl.getAttribute('viewBox') : null,
+  }
 }
 const easeOut = (x) => x * (2 - x)
 
 function ArrowMorphButton({ open, onToggle, label = 'Světla' }) {
-  const [paths, setPaths] = useState({ closed: null, open: null })
+  const [data, setData] = useState({
+    closed: { d: null, viewBox: null },
+    open: { d: null, viewBox: null },
+  })
+  const [ready, setReady] = useState(false)
   const morphRef = useRef(null)
   const tRef = useRef(open ? 1 : 0)
   const [t, setT] = useState(open ? 1 : 0)
 
+  // načtení obou SVG (d + viewBox)
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       const [closed, opened] = await Promise.all([
-        fetchPathD('/icons/Arrow-closed.svg'),
-        fetchPathD('/icons/Arrow-open.svg'),
+        fetchSvgData('/icons/Arrow-closed.svg'),
+        fetchSvgData('/icons/Arrow-open.svg'),
       ])
       if (cancelled) return
-      setPaths({ closed, open: opened })
-      morphRef.current = flubberInterpolate(closed, opened, { maxSegmentLength: 2 })
+      setData({ closed, open: opened })
+      if (closed.d && opened.d) {
+        morphRef.current = flubberInterpolate(closed.d, opened.d, { maxSegmentLength: 2 })
+        setReady(true)
+      }
     })()
     return () => { cancelled = true }
   }, [])
 
+  // animace mezi stavy
   useEffect(() => {
     if (!morphRef.current) {
-      // než se připraví interpolátor, jen přepneme t bez animace
       setT(open ? 1 : 0)
       tRef.current = open ? 1 : 0
       return
     }
     const from = tRef.current
     const to = open ? 1 : 0
-    const dur = 220
+    const dur = 240
     const start = performance.now()
     let raf
     const step = (now) => {
@@ -282,10 +294,11 @@ function ArrowMorphButton({ open, onToggle, label = 'Světla' }) {
     return () => cancelAnimationFrame(raf)
   }, [open])
 
-  const d =
-    morphRef.current
-      ? morphRef.current(t)
-      : (open ? paths.open : paths.closed) || ''
+  const currentD =
+    morphRef.current ? morphRef.current(t) : (open ? data.open.d : data.closed.d) || ''
+
+  // viewBox – použijeme z „closed“, pokud existuje, jinak fallback 0 0 24 24
+  const viewBox = data.closed.viewBox || '0 0 24 24'
 
   return (
     <button
@@ -294,9 +307,33 @@ function ArrowMorphButton({ open, onToggle, label = 'Světla' }) {
       aria-label="Toggle lights panel"
       style={{ marginTop: 10 }}
     >
-      <svg className="morph-svg" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
-        <path d={d} fill="currentColor" />
-      </svg>
+      {/* Fallback <img>, než je morph připravený a máme d */}
+      {!ready ? (
+        <img
+          src={open ? '/icons/Arrow-open.svg' : '/icons/Arrow-closed.svg'}
+          alt=""
+          width="16" height="16" style={{ width: 16, height: 16 }}
+          decoding="async" loading="eager"
+        />
+      ) : (
+        <svg
+          className="morph-svg"
+          width="16" height="16"
+          viewBox={viewBox}
+          aria-hidden="true"
+        >
+          <path
+            d={currentD}
+            fill="currentColor"
+            stroke="currentColor"
+            strokeWidth="2"
+            vectorEffect="non-scaling-stroke"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            shapeRendering="geometricPrecision"
+          />
+        </svg>
+      )}
       <span className="arrow-label">{label}</span>
     </button>
   )
@@ -375,7 +412,7 @@ export default function Page() {
             value={opacity1}
             onChange={(e) => setOpacity1(parseFloat(e.target.value))}
           />
-          <button
+        <button
             className={`toggle icon-btn ${visible1 ? 'is-on' : 'is-off'}`}
             onClick={() => setVisible1(!visible1)}
             aria-label={visible1 ? 'Hide Upper' : 'Show Upper'}
@@ -431,7 +468,7 @@ export default function Page() {
           </button>
         </div>
 
-        {/* Lights toggle – SVG morph */}
+        {/* Lights toggle – SVG path morph */}
         <ArrowMorphButton
           open={showLights}
           onToggle={() => setShowLights(!showLights)}

@@ -7,17 +7,17 @@ import * as THREE from 'three'
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { Html, useProgress } from '@react-three/drei'
 import { HexColorPicker, HexColorInput } from 'react-colorful'
-import { interpolate as flubberInterpolate, combine as flubberCombine } from 'flubber'
 
-/* ---------- Cesty k PNG ikonám + preload ---------- */
+/* ---------- Cesty k ikonám + preload ---------- */
 const ICONS = {
   eye: '/icons/Eye.png',
   eyeOff: '/icons/Eye-off.png',
+  arrowClosed: '/icons/Arrow-closed.svg',
+  arrowOpen: '/icons/Arrow-open.svg',
   bulb: '/icons/Bulb.png',
   flashlight: '/icons/Flashlight.png',
 }
 
-/* ---------- Přednačtení PNG ikon (SVG šipky čteme jako text níže) ---------- */
 function PreloadIcons() {
   useEffect(() => {
     Object.values(ICONS).forEach((src) => {
@@ -230,120 +230,6 @@ function FitCameraOnLoad({
   return null
 }
 
-/* ---------- SVG morph tlačítko (Arrow-closed.svg ↔ Arrow-open.svg) ---------- */
-async function fetchSvgData(url) {
-  const txt = await fetch(url).then((r) => r.text())
-  const doc = new DOMParser().parseFromString(txt, 'image/svg+xml')
-  const svgEl = doc.querySelector('svg')
-  const pathList = [...doc.querySelectorAll('path')].map((p) => p.getAttribute('d')).filter(Boolean)
-
-  let combined
-  if (pathList.length === 0) {
-    combined = null
-  } else if (pathList.length === 1) {
-    combined = pathList[0]
-  } else {
-    try {
-      combined = flubberCombine(pathList)
-    } catch (e) {
-      combined = pathList.join(' ')
-    }
-  }
-
-  return {
-    d: combined,
-    viewBox: (svgEl && svgEl.getAttribute('viewBox')) || '0 0 24 24',
-  }
-}
-const easeOut = (x) => x * (2 - x)
-
-function ArrowMorphButton({ open, onToggle, label = 'Světla' }) {
-  const [data, setData] = useState({
-    closed: { d: null, viewBox: null },
-    open: { d: null, viewBox: null },
-  })
-  const [ready, setReady] = useState(false)
-  const morphRef = useRef(null)
-  const tRef = useRef(open ? 1 : 0)
-  const [t, setT] = useState(open ? 1 : 0)
-
-  useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      const [closed, opened] = await Promise.all([
-        fetchSvgData('/icons/Arrow-closed.svg'),
-        fetchSvgData('/icons/Arrow-open.svg'),
-      ])
-      if (cancelled) return
-      setData({ closed, open: opened })
-      if (closed.d && opened.d) {
-        morphRef.current = flubberInterpolate(closed.d, opened.d, { maxSegmentLength: 2 })
-        setReady(true)
-      }
-    })()
-    return () => { cancelled = true }
-  }, [])
-
-  useEffect(() => {
-    if (!morphRef.current) {
-      setT(open ? 1 : 0)
-      tRef.current = open ? 1 : 0
-      return
-    }
-    const from = tRef.current
-    const to = open ? 1 : 0
-    const dur = 240
-    const start = performance.now()
-    let raf
-    const step = (now) => {
-      const p = Math.min(1, (now - start) / dur)
-      const v = from + (to - from) * easeOut(p)
-      tRef.current = v
-      setT(v)
-      if (p < 1) raf = requestAnimationFrame(step)
-    }
-    raf = requestAnimationFrame(step)
-    return () => cancelAnimationFrame(raf)
-  }, [open])
-
-  const currentD =
-    morphRef.current ? morphRef.current(t) : (open ? data.open.d : data.closed.d) || ''
-
-  const viewBox = data.closed.viewBox || '0 0 24 24'
-
-  return (
-    <button
-      className="toggle morph-arrow"
-      onClick={onToggle}
-      aria-label="Toggle lights panel"
-      style={{ marginTop: 10 }}
-    >
-      {!ready ? (
-        <img
-          src={open ? '/icons/Arrow-open.svg' : '/icons/Arrow-closed.svg'}
-          alt=""
-          width="16" height="16" style={{ width: 16, height: 16 }}
-          decoding="async" loading="eager"
-        />
-      ) : (
-        <svg className="morph-svg" width="16" height="16" viewBox={viewBox} aria-hidden="true">
-          <path
-            d={currentD}
-            fill="currentColor"
-            stroke="currentColor"
-            strokeWidth="2"
-            vectorEffect="non-scaling-stroke"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            shapeRendering="geometricPrecision"
-          />
-        </svg>
-      )}
-      <span className="arrow-label">{label}</span>
-    </button>
-  )
-}
-
 /* ---------- Page ---------- */
 export default function Page() {
   const [color1, setColor1] = useState('#f5f5dc')
@@ -367,6 +253,7 @@ export default function Page() {
   const [showLights, setShowLights] = useState(false)
   const [loadedObjects, setLoadedObjects] = useState([])
 
+  /* jemné skrytí panelu do první repaint */
   const [uiReady, setUiReady] = useState(false)
   useEffect(() => {
     const id = requestAnimationFrame(() => setUiReady(true))
@@ -404,7 +291,7 @@ export default function Page() {
           transition: 'opacity .12s ease',
         }}
       >
-        {/* Upper */}
+        {/* Upper row */}
         <div className="control-row">
           <div className="row-label">Upper:</div>
           <ColorSwatch color={color1} onChange={setColor1} ariaLabel="Upper color" />
@@ -427,7 +314,7 @@ export default function Page() {
           </button>
         </div>
 
-        {/* Lower */}
+        {/* Lower row */}
         <div className="control-row">
           <div className="row-label">Lower:</div>
           <ColorSwatch color={color2} onChange={setColor2} ariaLabel="Lower color" />
@@ -450,7 +337,7 @@ export default function Page() {
           </button>
         </div>
 
-        {/* Waxup */}
+        {/* Waxup row */}
         <div className="control-row">
           <div className="row-label">Waxup:</div>
           <ColorSwatch color={color3} onChange={setColor3} ariaLabel="Waxup color" />
@@ -473,12 +360,31 @@ export default function Page() {
           </button>
         </div>
 
-        {/* Lights toggle – SVG path morph */}
-        <ArrowMorphButton
-          open={showLights}
-          onToggle={() => setShowLights(!showLights)}
-          label="Světla"
-        />
+        {/* Lights toggle s „morph-like“ animací (SVG → SVG) */}
+        <button
+          className={`toggle arrow-toggle ${showLights ? 'is-open' : 'is-closed'}`}
+          onClick={() => setShowLights(!showLights)}
+          aria-label="Toggle lights panel"
+          style={{ marginTop: '10px' }}
+        >
+          <span className="arrow-stack" aria-hidden>
+            <img
+              src={ICONS.arrowClosed}
+              className="arrow-img arrow-closed"
+              width="16" height="16" style={{width:16,height:16}}
+              loading="eager" decoding="async"
+              alt=""
+            />
+            <img
+              src={ICONS.arrowOpen}
+              className="arrow-img arrow-open"
+              width="16" height="16" style={{width:16,height:16}}
+              loading="eager" decoding="async"
+              alt=""
+            />
+          </span>
+          <span className="arrow-label">Světla</span>
+        </button>
 
         {showLights && (
           <div style={{ marginTop: '8px' }}>
@@ -609,6 +515,7 @@ export default function Page() {
           cursor: pointer;
           font-size: 14px;
         }
+
         .icon-btn {
           position: relative;
           width: 28px;
@@ -636,8 +543,8 @@ export default function Page() {
         .icon-btn.is-on  .icon-on  { opacity: 1; }
         .icon-btn.is-off .icon-off { opacity: 1; }
 
-        /* Morph arrow button */
-        .morph-arrow {
+        /* Arrow morph-like toggle */
+        .arrow-toggle {
           position: relative;
           display: inline-flex;
           align-items: center;
@@ -648,14 +555,36 @@ export default function Page() {
           background: transparent;
           color: white;
           cursor: pointer;
+          overflow: hidden;
         }
-        .morph-svg {
-          display: block;
+        .arrow-stack {
+          position: relative;
           width: 16px;
           height: 16px;
-          filter: drop-shadow(0 0 1px rgba(0,0,0,.45));
+          display: inline-block;
         }
-        .morph-arrow .arrow-label { padding-left: 2px; }
+        .arrow-img {
+          position: absolute;
+          left: 0; top: 0;
+          width: 16px;
+          height: 16px;
+          opacity: 0;
+          transform: rotate(-90deg) scale(0.85);
+          transition: opacity .16s ease, transform .22s cubic-bezier(.2,.7,.2,1);
+          filter: drop-shadow(0 0 1px rgba(0,0,0,.4));
+          pointer-events: none;
+        }
+        /* zavřeno = pravá šipka viditelná */
+        .arrow-toggle.is-closed .arrow-closed {
+          opacity: 1;
+          transform: rotate(0deg) scale(1);
+        }
+        /* otevřeno = dolů šipka viditelná */
+        .arrow-toggle.is-open .arrow-open {
+          opacity: 1;
+          transform: rotate(0deg) scale(1);
+        }
+        .arrow-label { padding-left: 2px; }
 
         .controls-panel {
           backdrop-filter: blur(3px);

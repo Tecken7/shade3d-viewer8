@@ -16,7 +16,7 @@ const ICONS = {
 
 function PreloadIcons() {
   useEffect(() => {
-    [ICONS.eye, ICONS.eyeOff].forEach((src) => {
+    ;[ICONS.eye, ICONS.eyeOff].forEach((src) => {
       const img = new Image()
       img.decoding = 'async'
       img.src = src
@@ -293,15 +293,13 @@ export default function Page() {
             value={opacity1}
             onChange={(e) => setOpacity1(parseFloat(e.target.value))}
           />
-          <button className="toggle icon-btn" onClick={() => setVisible1(!visible1)}>
-            <img
-              src={visible1 ? ICONS.eye : ICONS.eyeOff}
-              alt={visible1 ? 'Hide Upper' : 'Show Upper'}
-              className="icon-img"
-              loading="eager"
-              decoding="async"
-              fetchPriority="high"
-            />
+          <button
+            className={`toggle icon-btn ${visible1 ? 'is-on' : 'is-off'}`}
+            onClick={() => setVisible1(!visible1)}
+            aria-label={visible1 ? 'Hide Upper' : 'Show Upper'}
+          >
+            <img src={ICONS.eye}    alt="" className="icon-img icon-on"  loading="eager" decoding="async" fetchPriority="high" />
+            <img src={ICONS.eyeOff} alt="" className="icon-img icon-off" loading="eager" decoding="async" fetchPriority="high" />
           </button>
         </div>
 
@@ -318,15 +316,13 @@ export default function Page() {
             value={opacity2}
             onChange={(e) => setOpacity2(parseFloat(e.target.value))}
           />
-          <button className="toggle icon-btn" onClick={() => setVisible2(!visible2)}>
-            <img
-              src={visible2 ? ICONS.eye : ICONS.eyeOff}
-              alt={visible2 ? 'Hide Lower' : 'Show Lower'}
-              className="icon-img"
-              loading="eager"
-              decoding="async"
-              fetchPriority="high"
-            />
+          <button
+            className={`toggle icon-btn ${visible2 ? 'is-on' : 'is-off'}`}
+            onClick={() => setVisible2(!visible2)}
+            aria-label={visible2 ? 'Hide Lower' : 'Show Lower'}
+          >
+            <img src={ICONS.eye}    alt="" className="icon-img icon-on"  loading="eager" decoding="async" fetchPriority="high" />
+            <img src={ICONS.eyeOff} alt="" className="icon-img icon-off" loading="eager" decoding="async" fetchPriority="high" />
           </button>
         </div>
 
@@ -343,15 +339,13 @@ export default function Page() {
             value={opacity3}
             onChange={(e) => setOpacity3(parseFloat(e.target.value))}
           />
-          <button className="toggle icon-btn" onClick={() => setVisible3(!visible3)}>
-            <img
-              src={visible3 ? ICONS.eye : ICONS.eyeOff}
-              alt={visible3 ? 'Hide Waxup' : 'Show Waxup'}
-              className="icon-img"
-              loading="eager"
-              decoding="async"
-              fetchPriority="high"
-            />
+          <button
+            className={`toggle icon-btn ${visible3 ? 'is-on' : 'is-off'}`}
+            onClick={() => setVisible3(!visible3)}
+            aria-label={visible3 ? 'Hide Waxup' : 'Show Waxup'}
+          >
+            <img src={ICONS.eye}    alt="" className="icon-img icon-on"  loading="eager" decoding="async" fetchPriority="high" />
+            <img src={ICONS.eyeOff} alt="" className="icon-img icon-off" loading="eager" decoding="async" fetchPriority="high" />
           </button>
         </div>
 
@@ -481,19 +475,31 @@ export default function Page() {
           font-size: 14px;
         }
         .icon-btn {
-          padding: 2px 6px;
+          position: relative;
+          width: 28px;
+          height: 24px;
+          padding: 0;
           display: inline-flex;
           align-items: center;
           justify-content: center;
+          overflow: hidden;
         }
         .icon-img {
+          position: absolute;
+          inset: 0;
           width: 20px;
           height: 20px;
+          margin: auto;
           display: block;
           filter: drop-shadow(0 0 2px rgba(0,0,0,.5));
           user-select: none;
           pointer-events: none;
+          opacity: 0;
+          transition: opacity .06s linear;
         }
+        .icon-btn.is-on  .icon-on  { opacity: 1; }
+        .icon-btn.is-off .icon-off { opacity: 1; }
+
         .controls-panel {
           backdrop-filter: blur(3px);
           background: rgba(0,0,0,.25);
@@ -532,4 +538,3 @@ export default function Page() {
     </div>
   )
 }
-

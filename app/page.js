@@ -8,7 +8,7 @@ import { Suspense, useEffect, useRef, useState } from 'react'
 import { Html, useProgress } from '@react-three/drei'
 import { HexColorPicker, HexColorInput } from 'react-colorful'
 
-/* ---------- Cesty k ikonám + preload ---------- */
+/* ---------- Ikony + preload ---------- */
 const ICONS = {
   eye: '/icons/Eye.png',
   eyeOff: '/icons/Eye-off.png',
@@ -187,7 +187,7 @@ function Loader() {
   )
 }
 
-/* ---------- Auto-fit kamery ---------- */
+/* ---------- Auto-fit kamery (jednorázově) ---------- */
 function FitCameraOnLoad({
   objects,
   expectedCount = 3,
@@ -253,7 +253,7 @@ export default function Page() {
   const [showLights, setShowLights] = useState(false)
   const [loadedObjects, setLoadedObjects] = useState([])
 
-  /* jemné skrytí panelu do první repaint */
+  // jemné skrytí panelu do první repaint
   const [uiReady, setUiReady] = useState(false)
   useEffect(() => {
     const id = requestAnimationFrame(() => setUiReady(true))
@@ -291,7 +291,7 @@ export default function Page() {
           transition: 'opacity .12s ease',
         }}
       >
-        {/* Upper row */}
+        {/* Upper */}
         <div className="control-row">
           <div className="row-label">Upper:</div>
           <ColorSwatch color={color1} onChange={setColor1} ariaLabel="Upper color" />
@@ -305,16 +305,16 @@ export default function Page() {
             onChange={(e) => setOpacity1(parseFloat(e.target.value))}
           />
           <button
-            className={toggle icon-btn ${visible1 ? 'is-on' : 'is-off'}}
+            className={`toggle icon-btn ${visible1 ? 'is-on' : 'is-off'}`}
             onClick={() => setVisible1(!visible1)}
             aria-label={visible1 ? 'Hide Upper' : 'Show Upper'}
           >
-            <img src={ICONS.eye}    alt="" className="icon-img icon-on"  width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" fetchPriority="high" />
-            <img src={ICONS.eyeOff} alt="" className="icon-img icon-off" width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" fetchPriority="high" />
+            <img src={ICONS.eye}    alt="" className="icon-img icon-on"  width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" />
+            <img src={ICONS.eyeOff} alt="" className="icon-img icon-off" width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" />
           </button>
         </div>
 
-        {/* Lower row */}
+        {/* Lower */}
         <div className="control-row">
           <div className="row-label">Lower:</div>
           <ColorSwatch color={color2} onChange={setColor2} ariaLabel="Lower color" />
@@ -327,17 +327,17 @@ export default function Page() {
             value={opacity2}
             onChange={(e) => setOpacity2(parseFloat(e.target.value))}
           />
-          <button
-            className={toggle icon-btn ${visible2 ? 'is-on' : 'is-off'}}
+        <button
+            className={`toggle icon-btn ${visible2 ? 'is-on' : 'is-off'}`}
             onClick={() => setVisible2(!visible2)}
             aria-label={visible2 ? 'Hide Lower' : 'Show Lower'}
           >
-            <img src={ICONS.eye}    alt="" className="icon-img icon-on"  width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" fetchPriority="high" />
-            <img src={ICONS.eyeOff} alt="" className="icon-img icon-off" width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" fetchPriority="high" />
+            <img src={ICONS.eye}    alt="" className="icon-img icon-on"  width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" />
+            <img src={ICONS.eyeOff} alt="" className="icon-img icon-off" width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" />
           </button>
         </div>
 
-        {/* Waxup row */}
+        {/* Waxup */}
         <div className="control-row">
           <div className="row-label">Waxup:</div>
           <ColorSwatch color={color3} onChange={setColor3} ariaLabel="Waxup color" />
@@ -351,18 +351,18 @@ export default function Page() {
             onChange={(e) => setOpacity3(parseFloat(e.target.value))}
           />
           <button
-            className={toggle icon-btn ${visible3 ? 'is-on' : 'is-off'}}
+            className={`toggle icon-btn ${visible3 ? 'is-on' : 'is-off'}`}
             onClick={() => setVisible3(!visible3)}
             aria-label={visible3 ? 'Hide Waxup' : 'Show Waxup'}
           >
-            <img src={ICONS.eye}    alt="" className="icon-img icon-on"  width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" fetchPriority="high" />
-            <img src={ICONS.eyeOff} alt="" className="icon-img icon-off" width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" fetchPriority="high" />
+            <img src={ICONS.eye}    alt="" className="icon-img icon-on"  width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" />
+            <img src={ICONS.eyeOff} alt="" className="icon-img icon-off" width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" />
           </button>
         </div>
 
-        {/* Lights toggle s „morph-like“ animací (SVG → SVG) */}
+        {/* Toggle Světla (arrow animace) */}
         <button
-          className={toggle arrow-toggle ${showLights ? 'is-open' : 'is-closed'}}
+          className={`toggle arrow-toggle ${showLights ? 'is-open' : 'is-closed'}`}
           onClick={() => setShowLights(!showLights)}
           aria-label="Toggle lights panel"
           style={{ marginTop: '10px' }}
@@ -372,15 +372,13 @@ export default function Page() {
               src={ICONS.arrowClosed}
               className="arrow-img arrow-closed"
               width="16" height="16" style={{width:16,height:16}}
-              loading="eager" decoding="async"
-              alt=""
+              loading="eager" decoding="async" alt=""
             />
             <img
               src={ICONS.arrowOpen}
               className="arrow-img arrow-open"
               width="16" height="16" style={{width:16,height:16}}
-              loading="eager" decoding="async"
-              alt=""
+              loading="eager" decoding="async" alt=""
             />
           </span>
           <span className="arrow-label">Světla</span>
@@ -464,7 +462,7 @@ export default function Page() {
       </Canvas>
 
       {/* Styly UI */}
-      <style jsx global>{
+      <style jsx global>{`
         .slider {
           -webkit-appearance: none;
           -moz-appearance: none;
@@ -509,8 +507,8 @@ export default function Page() {
         .toggle {
           background: transparent;
           border: 1px solid white;
-          border-radius: 5px;
-          padding: 3px 8px;
+          border-radius: 6px;
+          padding: 6px 10px;
           color: white;
           cursor: pointer;
           font-size: 14px;
@@ -543,7 +541,7 @@ export default function Page() {
         .icon-btn.is-on  .icon-on  { opacity: 1; }
         .icon-btn.is-off .icon-off { opacity: 1; }
 
-        /* Arrow morph-like toggle */
+        /* Arrow toggle (fade + jemná rotace/scale) */
         .arrow-toggle {
           position: relative;
           display: inline-flex;
@@ -574,16 +572,8 @@ export default function Page() {
           filter: drop-shadow(0 0 1px rgba(0,0,0,.4));
           pointer-events: none;
         }
-        /* zavřeno = pravá šipka viditelná */
-        .arrow-toggle.is-closed .arrow-closed {
-          opacity: 1;
-          transform: rotate(0deg) scale(1);
-        }
-        /* otevřeno = dolů šipka viditelná */
-        .arrow-toggle.is-open .arrow-open {
-          opacity: 1;
-          transform: rotate(0deg) scale(1);
-        }
+        .arrow-toggle.is-closed .arrow-closed { opacity: 1; transform: rotate(0deg) scale(1); }
+        .arrow-toggle.is-open   .arrow-open   { opacity: 1; transform: rotate(0deg) scale(1); }
         .arrow-label { padding-left: 2px; }
 
         .controls-panel {
@@ -635,7 +625,7 @@ export default function Page() {
           user-select: none;
           pointer-events: none;
         }
-      }</style>
+      `}</style>
     </div>
   )
 }

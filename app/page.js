@@ -16,7 +16,6 @@ const ICONS = {
   arrowOpen: '/icons/Arrow-open.svg',
   bulb: '/icons/Bulb.png',
   flashlight: '/icons/Flashlight.png',
-  reset: '/icons/Reset.png', // <- nová ikona
 }
 
 function PreloadIcons() {
@@ -188,16 +187,7 @@ function Loader() {
   )
 }
 
-/* ---------- Bridge: vezme kameru z Canvasu a předá ji nahoru ---------- */
-function CameraBridge({ onReady }) {
-  const { camera } = useThree()
-  useEffect(() => {
-    onReady?.(camera)
-  }, [camera, onReady])
-  return null
-}
-
-/* ---------- Auto-fit kamery (navíc onFitted callback) ---------- */
+/* ---------- Auto-fit kamery ---------- */
 function FitCameraOnLoad({
   objects,
   expectedCount = 3,
@@ -205,7 +195,6 @@ function FitCameraOnLoad({
   isMobile = false,
   desktopScale = 0.40,
   mobileScale = 1.0,
-  onFitted, // <- nový callback
 }) {
   const { camera, size } = useThree()
   const fitted = useRef(false)
@@ -236,13 +225,7 @@ function FitCameraOnLoad({
     camera.updateProjectionMatrix()
 
     fitted.current = true
-
-    // po prvním fitu uložit startovní stav
-    onFitted?.({
-      position: camera.position.clone(),
-      zoom: camera.zoom,
-    })
-  }, [objects, expectedCount, margin, isMobile, desktopScale, mobileScale, camera, size.width, size.height, onFitted])
+  }, [objects, expectedCount, margin, isMobile, desktopScale, mobileScale, camera, size.width, size.height])
 
   return null
 }
@@ -270,10 +253,6 @@ export default function Page() {
   const [showLights, setShowLights] = useState(false)
   const [loadedObjects, setLoadedObjects] = useState([])
 
-  // přístup ke kameře + uložený startovní stav
-  const cameraRef = useRef(null)
-  const initialCamState = useRef(null)
-
   /* jemné skrytí panelu do první repaint */
   const [uiReady, setUiReady] = useState(false)
   useEffect(() => {
@@ -291,15 +270,6 @@ export default function Page() {
 
   const handleModelLoaded = (obj) => {
     setLoadedObjects((prev) => (prev.includes(obj) ? prev : [...prev, obj]))
-  }
-
-  const resetCamera = () => {
-    const cam = cameraRef.current
-    const init = initialCamState.current
-    if (!cam || !init) return
-    cam.position.copy(init.position)
-    cam.zoom = init.zoom
-    cam.updateProjectionMatrix()
   }
 
   return (
@@ -335,7 +305,7 @@ export default function Page() {
             onChange={(e) => setOpacity1(parseFloat(e.target.value))}
           />
           <button
-            className={`toggle icon-btn ${visible1 ? 'is-on' : 'is-off'}`}
+            className={toggle icon-btn ${visible1 ? 'is-on' : 'is-off'}}
             onClick={() => setVisible1(!visible1)}
             aria-label={visible1 ? 'Hide Upper' : 'Show Upper'}
           >
@@ -358,7 +328,7 @@ export default function Page() {
             onChange={(e) => setOpacity2(parseFloat(e.target.value))}
           />
           <button
-            className={`toggle icon-btn ${visible2 ? 'is-on' : 'is-off'}`}
+            className={toggle icon-btn ${visible2 ? 'is-on' : 'is-off'}}
             onClick={() => setVisible2(!visible2)}
             aria-label={visible2 ? 'Hide Lower' : 'Show Lower'}
           >
@@ -381,7 +351,7 @@ export default function Page() {
             onChange={(e) => setOpacity3(parseFloat(e.target.value))}
           />
           <button
-            className={`toggle icon-btn ${visible3 ? 'is-on' : 'is-off'}`}
+            className={toggle icon-btn ${visible3 ? 'is-on' : 'is-off'}}
             onClick={() => setVisible3(!visible3)}
             aria-label={visible3 ? 'Hide Waxup' : 'Show Waxup'}
           >
@@ -390,48 +360,31 @@ export default function Page() {
           </button>
         </div>
 
-        {/* Řádek s tlačítky: Světla + Reset */}
-        <div className="buttons-row">
-          <button
-            className={`toggle arrow-toggle ${showLights ? 'is-open' : 'is-closed'}`}
-            onClick={() => setShowLights(!showLights)}
-            aria-label="Toggle lights panel"
-          >
-            <span className="arrow-stack" aria-hidden>
-              <img
-                src={ICONS.arrowClosed}
-                className="arrow-img arrow-closed"
-                width="16" height="16" style={{width:16,height:16}}
-                loading="eager" decoding="async" alt=""
-              />
-              <img
-                src={ICONS.arrowOpen}
-                className="arrow-img arrow-open"
-                width="16" height="16" style={{width:16,height:16}}
-                loading="eager" decoding="async" alt=""
-              />
-            </span>
-            <span className="arrow-label">Světla</span>
-          </button>
-
-          <button
-            className="toggle reset-btn"
-            onClick={resetCamera}
-            title="Reset view"
-            disabled={!initialCamState.current}
-          >
+        {/* Lights toggle s „morph-like“ animací (SVG → SVG) */}
+        <button
+          className={toggle arrow-toggle ${showLights ? 'is-open' : 'is-closed'}}
+          onClick={() => setShowLights(!showLights)}
+          aria-label="Toggle lights panel"
+          style={{ marginTop: '10px' }}
+        >
+          <span className="arrow-stack" aria-hidden>
             <img
-              src={ICONS.reset}
+              src={ICONS.arrowClosed}
+              className="arrow-img arrow-closed"
+              width="16" height="16" style={{width:16,height:16}}
+              loading="eager" decoding="async"
               alt=""
-              width="16"
-              height="16"
-              style={{ width: 16, height: 16 }}
-              loading="eager"
-              decoding="async"
             />
-            <span>Reset</span>
-          </button>
-        </div>
+            <img
+              src={ICONS.arrowOpen}
+              className="arrow-img arrow-open"
+              width="16" height="16" style={{width:16,height:16}}
+              loading="eager" decoding="async"
+              alt=""
+            />
+          </span>
+          <span className="arrow-label">Světla</span>
+        </button>
 
         {showLights && (
           <div style={{ marginTop: '8px' }}>
@@ -505,17 +458,13 @@ export default function Page() {
           isMobile={isMobile}
           desktopScale={0.40}
           mobileScale={1.0}
-          onFitted={(state) => {
-            if (!initialCamState.current) initialCamState.current = state
-          }}
         />
 
         <TouchTrackballControls />
-        <CameraBridge onReady={(cam) => (cameraRef.current = cam)} />
       </Canvas>
 
       {/* Styly UI */}
-      <style jsx global>{`
+      <style jsx global>{
         .slider {
           -webkit-appearance: none;
           -moz-appearance: none;
@@ -560,8 +509,8 @@ export default function Page() {
         .toggle {
           background: transparent;
           border: 1px solid white;
-          border-radius: 6px;
-          padding: 6px 10px;
+          border-radius: 5px;
+          padding: 3px 8px;
           color: white;
           cursor: pointer;
           font-size: 14px;
@@ -594,14 +543,7 @@ export default function Page() {
         .icon-btn.is-on  .icon-on  { opacity: 1; }
         .icon-btn.is-off .icon-off { opacity: 1; }
 
-        .buttons-row {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          margin-top: 10px;
-        }
-
-        /* Arrow toggle (fade + jemná rotace/scale) */
+        /* Arrow morph-like toggle */
         .arrow-toggle {
           position: relative;
           display: inline-flex;
@@ -632,27 +574,17 @@ export default function Page() {
           filter: drop-shadow(0 0 1px rgba(0,0,0,.4));
           pointer-events: none;
         }
+        /* zavřeno = pravá šipka viditelná */
         .arrow-toggle.is-closed .arrow-closed {
           opacity: 1;
           transform: rotate(0deg) scale(1);
         }
+        /* otevřeno = dolů šipka viditelná */
         .arrow-toggle.is-open .arrow-open {
           opacity: 1;
           transform: rotate(0deg) scale(1);
         }
         .arrow-label { padding-left: 2px; }
-
-        /* Reset button */
-        .reset-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 10px;
-        }
-        .reset-btn:disabled {
-          opacity: .5;
-          cursor: default;
-        }
 
         .controls-panel {
           backdrop-filter: blur(3px);
@@ -703,7 +635,7 @@ export default function Page() {
           user-select: none;
           pointer-events: none;
         }
-      `}</style>
+      }</style>
     </div>
   )
 }

@@ -16,7 +16,7 @@ const ICONS = {
   arrowOpen: '/icons/Arrow-open.svg',
   bulb: '/icons/Bulb.png',
   flashlight: '/icons/Flashlight.png',
-  reset: '/icons/Reset.png', // <- nová ikona
+  reset: '/icons/Reset.png',
 }
 
 function PreloadIcons() {
@@ -125,8 +125,8 @@ function Model({ url, color, opacity, visible, onLoaded }) {
   return visible ? <primitive object={obj} /> : null
 }
 
-/* ---------- Ovládání kamery ---------- */
-function TouchTrackballControls() {
+/* ---------- Ovládání kamery (vystavíme controls) ---------- */
+function TouchTrackballControls({ onReady }) {
   const { camera, gl } = useThree()
   const controlsRef = useRef(null)
 
@@ -137,6 +137,7 @@ function TouchTrackballControls() {
     controls.panSpeed = 1.0
     controls.staticMoving = true
     controlsRef.current = controls
+    onReady?.(controls)
 
     const handleTouchStart = (event) => {
       event.preventDefault()
@@ -155,7 +156,7 @@ function TouchTrackballControls() {
       gl.domElement.removeEventListener('touchmove', handleTouchMove)
       controls.dispose()
     }
-  }, [camera, gl])
+  }, [camera, gl, onReady])
 
   useFrame(() => {
     if (controlsRef.current && camera.isOrthographicCamera) {
@@ -191,13 +192,11 @@ function Loader() {
 /* ---------- Bridge: vezme kameru z Canvasu a předá ji nahoru ---------- */
 function CameraBridge({ onReady }) {
   const { camera } = useThree()
-  useEffect(() => {
-    onReady?.(camera)
-  }, [camera, onReady])
+  useEffect(() => { onReady?.(camera) }, [camera, onReady])
   return null
 }
 
-/* ---------- Auto-fit kamery (navíc onFitted callback) ---------- */
+/* ---------- Auto-fit kamery (nastaví i controls.target + uloží saveState) ---------- */
 function FitCameraOnLoad({
   objects,
   expectedCount = 3,
@@ -205,7 +204,8 @@ function FitCameraOnLoad({
   isMobile = false,
   desktopScale = 0.40,
   mobileScale = 1.0,
-  onFitted, // <- nový callback
+  controls,     // <- NOVÉ
+  onFitted,     // callback se stavem po fitu
 }) {
   const { camera, size } = useThree()
   const fitted = useRef(false)
@@ -223,6 +223,7 @@ function FitCameraOnLoad({
     box.getCenter(center)
     box.getSize(dims)
 
+    // zarovnej kameru na střed BB
     camera.position.set(center.x, center.y, camera.position.z)
 
     const objW = Math.max(dims.x, 1e-6)
@@ -230,19 +231,26 @@ function FitCameraOnLoad({
     const zoomX = size.width / (objW * margin)
     const zoomY = size.height / (objH * margin)
     let newZoom = Math.min(zoomX, zoomY)
-
     newZoom *= isMobile ? mobileScale : desktopScale
+
     camera.zoom = Math.max(newZoom, 0.01)
     camera.updateProjectionMatrix()
 
-    fitted.current = true
+    // DŮLEŽITÉ: cílit controls na střed a uložit stav
+    if (controls) {
+      controls.target.copy(center)
+      controls.update()
+      controls.saveState() // uloží position/target/up/zoom pro reset()
+    }
 
-    // po prvním fitu uložit startovní stav
+    fitted.current = true
     onFitted?.({
       position: camera.position.clone(),
       zoom: camera.zoom,
+      target: center.clone(),
+      up: camera.up.clone(),
     })
-  }, [objects, expectedCount, margin, isMobile, desktopScale, mobileScale, camera, size.width, size.height, onFitted])
+  }, [objects, expectedCount, margin, isMobile, desktopScale, mobileScale, camera, size.width, size.height, controls, onFitted])
 
   return null
 }
@@ -270,17 +278,18 @@ export default function Page() {
   const [showLights, setShowLights] = useState(false)
   const [loadedObjects, setLoadedObjects] = useState([])
 
-  // přístup ke kameře + uložený startovní stav
+  // odkazy na camera & controls
   const cameraRef = useRef(null)
-  const initialCamState = useRef(null)
+  const controlsRef = useRef(null)
 
-  /* jemné skrytí panelu do první repaint */
+  // UI ready
   const [uiReady, setUiReady] = useState(false)
   useEffect(() => {
     const id = requestAnimationFrame(() => setUiReady(true))
     return () => cancelAnimationFrame(id)
   }, [])
 
+  // mobil/desktop
   const [isMobile, setIsMobile] = useState(false)
   useEffect(() => {
     const uaMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
@@ -293,13 +302,12 @@ export default function Page() {
     setLoadedObjects((prev) => (prev.includes(obj) ? prev : [...prev, obj]))
   }
 
+  // Reset přes controls.reset() (vrátí i target/up)
   const resetCamera = () => {
-    const cam = cameraRef.current
-    const init = initialCamState.current
-    if (!cam || !init) return
-    cam.position.copy(init.position)
-    cam.zoom = init.zoom
-    cam.updateProjectionMatrix()
+    if (controlsRef.current) {
+      controlsRef.current.reset()
+      controlsRef.current.update()
+    }
   }
 
   return (
@@ -390,7 +398,7 @@ export default function Page() {
           </button>
         </div>
 
-        {/* Řádek s tlačítky: Světla + Reset */}
+        {/* Řádek: Světla + Reset */}
         <div className="buttons-row">
           <button
             className={`toggle arrow-toggle ${showLights ? 'is-open' : 'is-closed'}`}
@@ -398,37 +406,14 @@ export default function Page() {
             aria-label="Toggle lights panel"
           >
             <span className="arrow-stack" aria-hidden>
-              <img
-                src={ICONS.arrowClosed}
-                className="arrow-img arrow-closed"
-                width="16" height="16" style={{width:16,height:16}}
-                loading="eager" decoding="async" alt=""
-              />
-              <img
-                src={ICONS.arrowOpen}
-                className="arrow-img arrow-open"
-                width="16" height="16" style={{width:16,height:16}}
-                loading="eager" decoding="async" alt=""
-              />
+              <img src={ICONS.arrowClosed} className="arrow-img arrow-closed" width="16" height="16" style={{width:16,height:16}} loading="eager" decoding="async" alt="" />
+              <img src={ICONS.arrowOpen}   className="arrow-img arrow-open"   width="16" height="16" style={{width:16,height:16}} loading="eager" decoding="async" alt="" />
             </span>
             <span className="arrow-label">Světla</span>
           </button>
 
-          <button
-            className="toggle reset-btn"
-            onClick={resetCamera}
-            title="Reset view"
-            disabled={!initialCamState.current}
-          >
-            <img
-              src={ICONS.reset}
-              alt=""
-              width="16"
-              height="16"
-              style={{ width: 16, height: 16 }}
-              loading="eager"
-              decoding="async"
-            />
+          <button className="toggle reset-btn" onClick={resetCamera} title="Reset view">
+            <img src={ICONS.reset} alt="" width="16" height="16" style={{ width: 16, height: 16 }} loading="eager" decoding="async" />
             <span>Reset</span>
           </button>
         </div>
@@ -505,12 +490,11 @@ export default function Page() {
           isMobile={isMobile}
           desktopScale={0.40}
           mobileScale={1.0}
-          onFitted={(state) => {
-            if (!initialCamState.current) initialCamState.current = state
-          }}
+          controls={controlsRef.current}               // <- posíláme controls
+          onFitted={() => { /* nic dalšího netřeba, saveState se dělá uvnitř */ }}
         />
 
-        <TouchTrackballControls />
+        <TouchTrackballControls onReady={(c) => (controlsRef.current = c)} />
         <CameraBridge onReady={(cam) => (cameraRef.current = cam)} />
       </Canvas>
 
@@ -601,7 +585,7 @@ export default function Page() {
           margin-top: 10px;
         }
 
-        /* Arrow toggle (fade + jemná rotace/scale) */
+        /* Arrow toggle */
         .arrow-toggle {
           position: relative;
           display: inline-flex;

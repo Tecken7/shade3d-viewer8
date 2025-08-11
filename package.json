@@ -1,12 +1,4 @@
 {
-  "name": "shade3d-viewer-starter",
-  "version": "1.0.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start"
-  },
   "dependencies": {
     "@react-three/drei": "^9.102.7",
     "@react-three/fiber": "^8.16.1",

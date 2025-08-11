@@ -7,9 +7,9 @@ import * as THREE from 'three'
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { Html, useProgress } from '@react-three/drei'
 import { HexColorPicker, HexColorInput } from 'react-colorful'
-import { interpolate as flubberInterpolate } from 'flubber'
+import { interpolate as flubberInterpolate, combine as flubberCombine } from 'flubber'
 
-/* ---------- Cesty k ikonám + preload PNG ---------- */
+/* ---------- Cesty k PNG ikonám + preload ---------- */
 const ICONS = {
   eye: '/icons/Eye.png',
   eyeOff: '/icons/Eye-off.png',
@@ -17,7 +17,7 @@ const ICONS = {
   flashlight: '/icons/Flashlight.png',
 }
 
-/* ---------- Přednačtení PNG ikon ---------- */
+/* ---------- Přednačtení PNG ikon (SVG šipky čteme jako text níže) ---------- */
 function PreloadIcons() {
   useEffect(() => {
     Object.values(ICONS).forEach((src) => {
@@ -235,10 +235,24 @@ async function fetchSvgData(url) {
   const txt = await fetch(url).then((r) => r.text())
   const doc = new DOMParser().parseFromString(txt, 'image/svg+xml')
   const svgEl = doc.querySelector('svg')
-  const pathEl = doc.querySelector('path')
+  const pathList = [...doc.querySelectorAll('path')].map((p) => p.getAttribute('d')).filter(Boolean)
+
+  let combined
+  if (pathList.length === 0) {
+    combined = null
+  } else if (pathList.length === 1) {
+    combined = pathList[0]
+  } else {
+    try {
+      combined = flubberCombine(pathList)
+    } catch (e) {
+      combined = pathList.join(' ')
+    }
+  }
+
   return {
-    d: pathEl ? pathEl.getAttribute('d') : null,
-    viewBox: svgEl ? svgEl.getAttribute('viewBox') : null,
+    d: combined,
+    viewBox: (svgEl && svgEl.getAttribute('viewBox')) || '0 0 24 24',
   }
 }
 const easeOut = (x) => x * (2 - x)
@@ -253,7 +267,6 @@ function ArrowMorphButton({ open, onToggle, label = 'Světla' }) {
   const tRef = useRef(open ? 1 : 0)
   const [t, setT] = useState(open ? 1 : 0)
 
-  // načtení obou SVG (d + viewBox)
   useEffect(() => {
     let cancelled = false
     ;(async () => {
@@ -271,7 +284,6 @@ function ArrowMorphButton({ open, onToggle, label = 'Světla' }) {
     return () => { cancelled = true }
   }, [])
 
-  // animace mezi stavy
   useEffect(() => {
     if (!morphRef.current) {
       setT(open ? 1 : 0)
@@ -297,7 +309,6 @@ function ArrowMorphButton({ open, onToggle, label = 'Světla' }) {
   const currentD =
     morphRef.current ? morphRef.current(t) : (open ? data.open.d : data.closed.d) || ''
 
-  // viewBox – použijeme z „closed“, pokud existuje, jinak fallback 0 0 24 24
   const viewBox = data.closed.viewBox || '0 0 24 24'
 
   return (
@@ -307,7 +318,6 @@ function ArrowMorphButton({ open, onToggle, label = 'Světla' }) {
       aria-label="Toggle lights panel"
       style={{ marginTop: 10 }}
     >
-      {/* Fallback <img>, než je morph připravený a máme d */}
       {!ready ? (
         <img
           src={open ? '/icons/Arrow-open.svg' : '/icons/Arrow-closed.svg'}
@@ -316,12 +326,7 @@ function ArrowMorphButton({ open, onToggle, label = 'Světla' }) {
           decoding="async" loading="eager"
         />
       ) : (
-        <svg
-          className="morph-svg"
-          width="16" height="16"
-          viewBox={viewBox}
-          aria-hidden="true"
-        >
+        <svg className="morph-svg" width="16" height="16" viewBox={viewBox} aria-hidden="true">
           <path
             d={currentD}
             fill="currentColor"
@@ -412,7 +417,7 @@ export default function Page() {
             value={opacity1}
             onChange={(e) => setOpacity1(parseFloat(e.target.value))}
           />
-        <button
+          <button
             className={`toggle icon-btn ${visible1 ? 'is-on' : 'is-off'}`}
             onClick={() => setVisible1(!visible1)}
             aria-label={visible1 ? 'Hide Upper' : 'Show Upper'}

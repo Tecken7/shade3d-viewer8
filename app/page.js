@@ -12,8 +12,8 @@ import { HexColorPicker, HexColorInput } from 'react-colorful'
 const ICONS = {
   eye: '/icons/Eye.png',
   eyeOff: '/icons/Eye-off.png',
-  arrowRight: '/icons/ArrowRight.png',
-  arrowDown: '/icons/ArrowDown.png',
+  arrowClosed: '/icons/Arrow-closed.svg',
+  arrowOpen: '/icons/Arrow-open.svg',
   bulb: '/icons/Bulb.png',
   flashlight: '/icons/Flashlight.png',
 }
@@ -253,7 +253,7 @@ export default function Page() {
   const [showLights, setShowLights] = useState(false)
   const [loadedObjects, setLoadedObjects] = useState([])
 
-  /* Skryj panel, dokud se nehydratuje/domaluje první frame UI */
+  /* jemné skrytí panelu do první repaint */
   const [uiReady, setUiReady] = useState(false)
   useEffect(() => {
     const id = requestAnimationFrame(() => setUiReady(true))
@@ -274,7 +274,6 @@ export default function Page() {
 
   return (
     <div style={{ width: '100vw', height: '100vh' }}>
-      {/* přednačtení všech ikon */}
       <PreloadIcons />
 
       <div
@@ -310,7 +309,6 @@ export default function Page() {
             onClick={() => setVisible1(!visible1)}
             aria-label={visible1 ? 'Hide Upper' : 'Show Upper'}
           >
-            {/* fixní rozměry rovnou na elementu → žádný flash */}
             <img src={ICONS.eye}    alt="" className="icon-img icon-on"  width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" fetchPriority="high" />
             <img src={ICONS.eyeOff} alt="" className="icon-img icon-off" width="20" height="20" style={{width:20,height:20}} loading="eager" decoding="async" fetchPriority="high" />
           </button>
@@ -362,21 +360,35 @@ export default function Page() {
           </button>
         </div>
 
-        {/* Lights toggle button (šipky) */}
+        {/* Lights toggle s „morph-like“ animací (SVG → SVG) */}
         <button
-          className={`toggle icon-arrow ${showLights ? 'is-open' : 'is-closed'}`}
+          className={`toggle arrow-toggle ${showLights ? 'is-open' : 'is-closed'}`}
           onClick={() => setShowLights(!showLights)}
           aria-label="Toggle lights panel"
           style={{ marginTop: '10px' }}
         >
-          <img src={ICONS.arrowRight} alt="" className="icon-arrow-img icon-right" width="16" height="16" style={{width:16,height:16}} loading="eager" decoding="async" />
-          <img src={ICONS.arrowDown}  alt="" className="icon-arrow-img icon-down"  width="16" height="16" style={{width:16,height:16}} loading="eager" decoding="async" />
+          <span className="arrow-stack" aria-hidden>
+            <img
+              src={ICONS.arrowClosed}
+              className="arrow-img arrow-closed"
+              width="16" height="16" style={{width:16,height:16}}
+              loading="eager" decoding="async"
+              alt=""
+            />
+            <img
+              src={ICONS.arrowOpen}
+              className="arrow-img arrow-open"
+              width="16" height="16" style={{width:16,height:16}}
+              loading="eager" decoding="async"
+              alt=""
+            />
+          </span>
           <span className="arrow-label">Světla</span>
         </button>
 
         {showLights && (
           <div style={{ marginTop: '8px' }}>
-            {/* Light intensity s ikonou žárovky */}
+            {/* Light intensity */}
             <div className="lights-row">
               <img src={ICONS.bulb} alt="" className="icon-inline" width="16" height="16" style={{width:16,height:16}} loading="eager" decoding="async" />
               <span>Light Intensity</span>
@@ -394,7 +406,7 @@ export default function Page() {
               />
             </div>
 
-            {/* Pozice světel s ikonou baterky */}
+            {/* Pozice světel */}
             {[
               { label: 'Light 1 Position', pos: lightPos1, setPos: setLightPos1 },
               { label: 'Light 2 Position', pos: lightPos2, setPos: setLightPos2 },
@@ -531,7 +543,8 @@ export default function Page() {
         .icon-btn.is-on  .icon-on  { opacity: 1; }
         .icon-btn.is-off .icon-off { opacity: 1; }
 
-        .icon-arrow {
+        /* Arrow morph-like toggle */
+        .arrow-toggle {
           position: relative;
           display: inline-flex;
           align-items: center;
@@ -544,22 +557,34 @@ export default function Page() {
           cursor: pointer;
           overflow: hidden;
         }
-        .icon-arrow-img {
+        .arrow-stack {
+          position: relative;
           width: 16px;
           height: 16px;
+          display: inline-block;
+        }
+        .arrow-img {
           position: absolute;
-          left: 8px;
-          top: 0; bottom: 0; margin: auto 0;
+          left: 0; top: 0;
+          width: 16px;
+          height: 16px;
           opacity: 0;
-          transition: opacity .08s linear, transform .12s ease;
-          filter: drop-shadow(0 0 1px rgba(0,0,0,.5));
+          transform: rotate(-90deg) scale(0.85);
+          transition: opacity .16s ease, transform .22s cubic-bezier(.2,.7,.2,1);
+          filter: drop-shadow(0 0 1px rgba(0,0,0,.4));
           pointer-events: none;
         }
-        .icon-arrow .arrow-label {
-          padding-left: 22px;
+        /* zavřeno = pravá šipka viditelná */
+        .arrow-toggle.is-closed .arrow-closed {
+          opacity: 1;
+          transform: rotate(0deg) scale(1);
         }
-        .icon-arrow.is-closed .icon-right { opacity: 1; transform: translateX(0); }
-        .icon-arrow.is-open   .icon-down  { opacity: 1; transform: translateY(0); }
+        /* otevřeno = dolů šipka viditelná */
+        .arrow-toggle.is-open .arrow-open {
+          opacity: 1;
+          transform: rotate(0deg) scale(1);
+        }
+        .arrow-label { padding-left: 2px; }
 
         .controls-panel {
           backdrop-filter: blur(3px);

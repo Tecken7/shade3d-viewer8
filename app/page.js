@@ -8,6 +8,23 @@ import { Suspense, useEffect, useRef, useState } from 'react'
 import { Html, useProgress } from '@react-three/drei'
 import { HexColorPicker, HexColorInput } from 'react-colorful'
 
+/* ---------- Cesty k ikonám + preload ---------- */
+const ICONS = {
+  eye: '/icons/Eye.png',
+  eyeOff: '/icons/Eye-off.png',
+}
+
+function PreloadIcons() {
+  useEffect(() => {
+    [ICONS.eye, ICONS.eyeOff].forEach((src) => {
+      const img = new Image()
+      img.decoding = 'async'
+      img.src = src
+    })
+  }, [])
+  return null
+}
+
 /* ---------- Jednotný color picker (popover) ---------- */
 function ColorSwatch({ color, onChange, ariaLabel }) {
   const [open, setOpen] = useState(false)
@@ -247,6 +264,9 @@ export default function Page() {
 
   return (
     <div style={{ width: '100vw', height: '100vh' }}>
+      {/* přednačtení ikon */}
+      <PreloadIcons />
+
       <div
         className="controls-panel"
         style={{
@@ -275,9 +295,12 @@ export default function Page() {
           />
           <button className="toggle icon-btn" onClick={() => setVisible1(!visible1)}>
             <img
-              src={visible1 ? '/icons/Eye.png' : '/icons/Eye-off.png'}
+              src={visible1 ? ICONS.eye : ICONS.eyeOff}
               alt={visible1 ? 'Hide Upper' : 'Show Upper'}
               className="icon-img"
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
             />
           </button>
         </div>
@@ -297,9 +320,12 @@ export default function Page() {
           />
           <button className="toggle icon-btn" onClick={() => setVisible2(!visible2)}>
             <img
-              src={visible2 ? '/icons/Eye.png' : '/icons/Eye-off.png'}
+              src={visible2 ? ICONS.eye : ICONS.eyeOff}
               alt={visible2 ? 'Hide Lower' : 'Show Lower'}
               className="icon-img"
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
             />
           </button>
         </div>
@@ -317,11 +343,14 @@ export default function Page() {
             value={opacity3}
             onChange={(e) => setOpacity3(parseFloat(e.target.value))}
           />
-        <button className="toggle icon-btn" onClick={() => setVisible3(!visible3)}>
+          <button className="toggle icon-btn" onClick={() => setVisible3(!visible3)}>
             <img
-              src={visible3 ? '/icons/Eye.png' : '/icons/Eye-off.png'}
+              src={visible3 ? ICONS.eye : ICONS.eyeOff}
               alt={visible3 ? 'Hide Waxup' : 'Show Waxup'}
               className="icon-img"
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
             />
           </button>
         </div>
@@ -463,7 +492,7 @@ export default function Page() {
           display: block;
           filter: drop-shadow(0 0 2px rgba(0,0,0,.5));
           user-select: none;
-          pointer-events: none; /* klik jde na button, ne na img */
+          pointer-events: none;
         }
         .controls-panel {
           backdrop-filter: blur(3px);
@@ -503,3 +532,4 @@ export default function Page() {
     </div>
   )
 }
+

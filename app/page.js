@@ -253,7 +253,7 @@ export default function Page() {
   const [showLights, setShowLights] = useState(false)
   const [loadedObjects, setLoadedObjects] = useState([])
 
-  // skrytí panelu do první repaint (kvůli FOUC)
+  // jemné skrytí panelu do první repaint
   const [uiReady, setUiReady] = useState(false)
   useEffect(() => {
     const id = requestAnimationFrame(() => setUiReady(true))
@@ -273,17 +273,16 @@ export default function Page() {
   }
 
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
+    <div style={{ width: '100vw', height: '100vh' }}>
       <PreloadIcons />
 
-      {/* Ovládací panel */}
       <div
         className="controls-panel"
         style={{
           position: 'absolute',
           top: 10,
           left: 10,
-          zIndex: 2,
+          zIndex: 1,
           color: 'white',
           fontFamily: 'sans-serif',
           fontSize: '14px',
@@ -299,7 +298,9 @@ export default function Page() {
           <input
             className="slider"
             type="range"
-            min={0} max={1} step={0.01}
+            min={0}
+            max={1}
+            step={0.01}
             value={opacity1}
             onChange={(e) => setOpacity1(parseFloat(e.target.value))}
           />
@@ -320,11 +321,13 @@ export default function Page() {
           <input
             className="slider"
             type="range"
-            min={0} max={1} step={0.01}
+            min={0}
+            max={1}
+            step={0.01}
             value={opacity2}
             onChange={(e) => setOpacity2(parseFloat(e.target.value))}
           />
-          <button
+        <button
             className={`toggle icon-btn ${visible2 ? 'is-on' : 'is-off'}`}
             onClick={() => setVisible2(!visible2)}
             aria-label={visible2 ? 'Hide Lower' : 'Show Lower'}
@@ -341,7 +344,9 @@ export default function Page() {
           <input
             className="slider"
             type="range"
-            min={0} max={1} step={0.01}
+            min={0}
+            max={1}
+            step={0.01}
             value={opacity3}
             onChange={(e) => setOpacity3(parseFloat(e.target.value))}
           />
@@ -355,7 +360,7 @@ export default function Page() {
           </button>
         </div>
 
-        {/* Toggle Světla */}
+        {/* Toggle Světla (arrow animace) */}
         <button
           className={`toggle arrow-toggle ${showLights ? 'is-open' : 'is-closed'}`}
           onClick={() => setShowLights(!showLights)}
@@ -431,7 +436,6 @@ export default function Page() {
         )}
       </div>
 
-      {/* Canvas */}
       <Canvas orthographic camera={{ position: [0, 0, 100] }}>
         <ambientLight intensity={lightIntensity * 0.4} />
         <directionalLight position={[lightPos1.x, lightPos1.y, lightPos1.z]} intensity={lightIntensity * 1.5} />
@@ -456,22 +460,6 @@ export default function Page() {
 
         <TouchTrackballControls />
       </Canvas>
-
-      {/* Logo dole uprostřed – neblokuje interakci */}
-      <img
-        src="/arthetic logo 2.svg"
-        alt="ARTHETIC"
-        style={{
-          position: 'absolute',
-          bottom: '18px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '220px',
-          opacity: 0.45,
-          pointerEvents: 'none',
-          zIndex: 1 /* panel má 2, canvas je 'auto' → logo nad canvasem, pod panelem */,
-        }}
-      />
 
       {/* Styly UI */}
       <style jsx global>{`

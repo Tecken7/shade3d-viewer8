@@ -339,7 +339,7 @@ export default function Page() {
 
         {/* Waxup */}
         <div className="control-row">
-          <div className="row-label">Waxup:</div>
+          <div className="row-label">Bridge:</div>
           <ColorSwatch color={color3} onChange={setColor3} ariaLabel="Waxup color" />
           <input
             className="slider"
